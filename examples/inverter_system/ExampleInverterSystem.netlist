@@ -11,7 +11,7 @@
 #const VTH 1.0
 #const LO 0.001
 #const RO 0.0
-#const CO 1.0e-6
+#const CO 100.0e-6
 #const RLOAD 10.0
 
 % system netlist

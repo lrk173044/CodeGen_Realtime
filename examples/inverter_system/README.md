@@ -2,7 +2,7 @@
 
 Adapted from the supplied inverter example. The netlist and generated `ExampleInverterSystem.hpp` are retained unchanged.
 
-The fixed settings preserve the original driver: +/-1000 V DC supply, 50 Hz sinusoidal references, a 100 kHz symmetric triangular carrier, modulation index 1, complementary gates without dead time, a 50 ns time step, and a 1 s duration. Each phase has a 1 mH inductor, 1 uF capacitor, and 10 Ohm load.
+This accelerated variant uses a +/-1000 V DC supply, 50 Hz sinusoidal references, a 10 kHz symmetric triangular carrier, modulation index 1, complementary gates without dead time, a 1 us time step, and a 1 s duration. Each phase has a 1 mH inductor, 100 uF capacitor, and 10 Ohm load. The higher capacitance preserves low-frequency output quality and attenuates the 10 kHz switching ripple.
 
 ## Build
 
@@ -38,7 +38,7 @@ Neither step requires arguments. The C++ driver uses standard C++17 and only wri
 Files are written to `results/` beside the executable:
 
 - `inverter.csv`: sparse records across the full run, with samples every 1 us over 0.94-1.00 s.
-- `spwm.csv`: actual references, carrier, and A-phase gate commands over 22.00-22.05 ms, sampled every 50 ns.
+- `spwm.csv`: actual references, carrier, and A-phase gate commands over 22.00-22.50 ms, sampled every 1 us.
 - `inverter_voltage.png`: steady three-phase voltages over three 50 Hz cycles.
 - `inverter_spwm.png`: reference/carrier comparison and gate signals over five PWM periods.
 - `validation.json`: amplitude, phase-sequence, and gate-logic checks.
@@ -49,4 +49,4 @@ Circuit CSV timestamps mark the end of an integration step. SPWM timestamps mark
 
 The generated interface returns exactly five node voltages, `x_out[5]`. The driver reads and writes only those five values, avoiding the original six-element overrun.
 
-`std::acos(-1.0)` replaces `std::numbers::pi` to support C++17. Samples are streamed directly to CSV. The carrier uses integer step indices, giving exactly 200 steps per PWM period.
+`std::acos(-1.0)` replaces `std::numbers::pi` to support C++17. Samples are streamed directly to CSV. The carrier uses integer step indices, giving exactly 100 steps per 10 kHz PWM period.

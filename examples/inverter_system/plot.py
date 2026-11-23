@@ -60,7 +60,7 @@ def main():
     phase_ac = float(np.degrees(np.angle(np.exp(1j*(phases[2]-phases[0])))))
     # Independent low-frequency LC/load transfer function, not the generated recurrence.
     w = 2*np.pi*50
-    expected_peak = 1000/abs(1-.001*1e-6*w*w+1j*w*.001/10)
+    expected_peak = 1000/abs(1-.001*100e-6*w*w+1j*w*.001/10)
     if any(abs(a-expected_peak)/expected_peak > .05 for a in amplitudes):
         raise ValueError(f"Unexpected steady voltage amplitudes: {amplitudes}")
     if abs(phase_ab+120) > 5 or abs(phase_ac-120) > 5:
@@ -74,7 +74,7 @@ def main():
         ax.plot(tw, d[key][window], color=color, label=label)
     ax.set(xlim=(.94, 1), xlabel="Time / s", ylabel="Phase voltage / V")
     ax.legend(loc="upper right", ncol=3)
-    fig.text(.09, .84, "50 Hz reference | 100 kHz triangular carrier | m = 1 | dt = 50 ns | simulated from 0 to 1 s", fontsize=10, color="#526173")
+    fig.text(.09, .84, "50 Hz reference | 10 kHz triangular carrier | m = 1 | dt = 1 us | simulated from 0 to 1 s", fontsize=10, color="#526173")
     fig.text(.09, .065, "50 Hz fitted phase peaks: "+", ".join(f"{v:.1f} V" for v in amplitudes)+". Phase separation: 120 degrees.", fontsize=10)
     fig.savefig(root/"inverter_voltage.png", dpi=180)
     plt.close(fig)
@@ -83,22 +83,22 @@ def main():
     fig.subplots_adjust(left=.09, right=.98, bottom=.18, top=.80, hspace=.20)
     fig.suptitle("SPWM - reference / carrier comparison and gate signals", x=.09, ha="left", fontsize=16, fontweight="bold")
     tx = pwm["time_s"]*1000
-    ax[0].plot(tx, pwm["carrier"], color="#939da7", label="100 kHz carrier", lw=1)
+    ax[0].plot(tx, pwm["carrier"], color="#939da7", label="10 kHz carrier", lw=1)
     for phase, color in zip("abc", colors):
         ax[0].plot(tx, pwm[f"reference_{phase}"], color=color, label=f"{phase.upper()} reference")
     ax[0].set_ylabel("Normalized value")
     ax[0].legend(ncol=4, fontsize=9, loc="upper right")
     ax[1].step(tx, pwm["gate_a_upper"], where="post", color=colors[0], label="A upper")
     ax[1].step(tx, pwm["gate_a_lower"], where="post", color=colors[2], ls="--", label="A lower")
-    ax[1].set(xlabel="Time / ms", ylabel="Gate", ylim=(-.15, 1.3), yticks=[0, 1], xlim=(22, 22.05))
+    ax[1].set(xlabel="Time / ms", ylabel="Gate", ylim=(-.15, 1.3), yticks=[0, 1], xlim=(22, 22.5))
     ax[1].legend(loc="upper right", ncol=2, fontsize=9)
-    fig.text(.09, .86, "Five PWM periods; trace saved at every 50 ns step, using the actual C++ gate commands.", fontsize=10, color="#526173")
+    fig.text(.09, .86, "Five PWM periods; trace saved at every 1 us step, using the actual C++ gate commands.", fontsize=10, color="#526173")
     fig.text(.09, .055, "Upper = (reference >= carrier); lower = NOT upper. Complementary switching without dead time.", fontsize=10)
     fig.savefig(root/"inverter_spwm.png", dpi=180)
     plt.close(fig)
-    write_validation(root, {"dt_s": 50e-9, "duration_s": 1, "steps": 20000000,
+    write_validation(root, {"dt_s": 1e-6, "duration_s": 1, "steps": 1000000,
                             "node_output_count": 5, "all_values_finite": True,
-                            "fundamental_hz": 50, "carrier_hz": 100000, "modulation": 1,
+                            "fundamental_hz": 50, "carrier_hz": 10000, "modulation": 1,
                             "phase_peak_V": amplitudes, "ideal_LC_phase_peak_V": expected_peak,
                             "phase_AB_degrees": phase_ab, "phase_AC_degrees": phase_ac,
                             "gates_match_comparator": True, "complementary_gates": True})
