@@ -19,11 +19,11 @@ int main(int argc, char** argv) {
             << "0,0,0,0,0,0,0,0,0\n";
         pwm << "time_s,reference_a,reference_b,reference_c,carrier,gate_a_upper,gate_a_lower\n";
         // Preserve the source example's physical settings, using C++17 throughout.
-        constexpr double dt = 50e-9, duration = 1.0, hz = 50.0, carrier_hz = 100000.0, m = 1.0;
+        constexpr double dt = 1e-6, duration = 1.0, hz = 50.0, carrier_hz = 10000.0, m = 1.0;
         const double pi = std::acos(-1.0);
         const std::int64_t steps = std::llround(duration/dt);
         const std::int64_t carrier_ticks = std::llround(1/(carrier_hz*dt));
-        const std::int64_t zoom_start = std::llround(.022/dt), zoom_end = std::llround(.02205/dt);
+        const std::int64_t zoom_start = std::llround(.022/dt), zoom_end = std::llround(.0225/dt);
         const std::int64_t steady_start = std::llround(.94/dt);
         double node[5] = {}, vcp = 0, vcn = 0, current[3] = {};
         bool gates[6] = {};
@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
             for (double value : current)
                 if (!std::isfinite(value)) throw std::runtime_error("Nonfinite inverter current");
             const auto completed = n+1;
-            if (completed % 2000 == 0 || (completed >= steady_start && completed % 20 == 0) || completed == steps) {
+            if (completed % 2000 == 0 || completed >= steady_start || completed == steps) {
                 csv << completed*dt;
                 // The generated interface has FIVE node outputs. Never read node[5].
                 for (double value : node) csv << ',' << value;
@@ -56,7 +56,7 @@ int main(int argc, char** argv) {
         }
         csv.close(); pwm.close();
         if (!csv || !pwm) throw std::runtime_error("Failed to write inverter CSV");
-        std::cout << "Completed 20000000 steps (50 ns, 1 s, 50 Hz, 100 kHz PWM).\nSaved: "
+        std::cout << "Completed 1000000 steps (1 us, 1 s, 50 Hz, 10 kHz PWM).\nSaved: "
                   << output.string() << "\nRun plot.py separately.\n";
         return 0;
     } catch (const std::exception& e) {

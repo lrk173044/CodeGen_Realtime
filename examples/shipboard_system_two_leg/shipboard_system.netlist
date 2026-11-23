@@ -8,9 +8,9 @@
 
 #name shipboard_zonal_system
 
-#const DT 50.0e-9
+#const DT 1.0e-6
 #const DC_VG 10000.0
-#const DC_RG 0.0001
+#const DC_RG 0.0005
 #const DCDC_CIN 0.001
 #const DCDC_CFILT 0.0001
 #const DCDC_LFILT 0.0001
