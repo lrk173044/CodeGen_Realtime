@@ -1,1 +1,1 @@
-#define DEMO_DT 4.99999999999999977e-08
+#define DEMO_DT 1.0e-6

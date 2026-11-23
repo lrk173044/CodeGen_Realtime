@@ -4,7 +4,7 @@
 // +/-6 kV DC bus lowered to one third. Times and AC peaks are read from plots.
 // PI settings, startup, carrier shape and phase are NOT published.
 namespace paper {
-constexpr double dt = 50e-9, carrier_hz = 100000;
+constexpr double dt = 1e-6, carrier_hz = 10000;
 constexpr double fundamental_hz = 60; // inferred, not explicitly stated
 constexpr double control_dt = 10e-6; // reconstruction
 constexpr double kp = .2, ki = 600, filter_tau = .0002; // reconstruction

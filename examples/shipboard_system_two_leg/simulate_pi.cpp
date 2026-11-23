@@ -19,7 +19,10 @@ namespace fs = std::filesystem;
 template<int instance>
 int simulate(const paper::Case& scenario, const fs::path& output)
 {
-    static_assert(DEMO_DT == paper::dt, "Solver must be generated at 50 ns");
+    static_assert(
+    DEMO_DT == paper::dt,
+    "Solver must be generated at 1 us"
+);
     const bool closedLoop = scenario.pi;
     const std::string mode = closedLoop ? "pi" : "open";
     const std::string prefix = (output/scenario.name).string();
@@ -134,7 +137,7 @@ int simulate(const paper::Case& scenario, const fs::path& output)
          << ",\n\"kp\":" << cfg.kp << ",\n\"ki_per_s\":" << cfg.ki << ",\n\"filter_tau_s\":" << cfg.filter_tau_s
          << ",\n\"voltage_base_V\":" << cfg.voltage_base_V << ",\n\"maximum_modulation\":" << cfg.max_modulation
          << ",\n\"active_control_updates\":" << activeControls << ",\n\"saturated_control_updates\":" << saturatedControls
-         << ",\n\"controlled_inverter\":1,\n\"other_inverters_modulation\":1,\n\"carrier_Hz\":100000,\n\"fundamental_Hz_assumed\":60"
+         << ",\n\"controlled_inverter\":1,\n\"other_inverters_modulation\":1,\n\"carrier_Hz\":10000,\n\"fundamental_Hz_assumed\":60"
          << ",\n\"disturbance_enabled\":" << (disturbance ? "true" : "false")
          << ",\n\"measurement\":\"Clarke magnitude of previous PWM-period mean phase voltages, then first-order LPF\",\n\"pi_gains_published\":false,\"control_settings_origin\":\"reconstruction, not published in paper\",\"feedforward\":false,\n\"header_postprocessing\":false\n}\n";
     std::cout << prefix << ": " << status << ", t=" << completed * dt << ", wall=" << wall << "s\n";
@@ -149,7 +152,7 @@ int main(int argc, char** argv)
         // Both the executable and copied Python script use this same results directory.
         const auto output = fs::absolute(argv[0]).parent_path()/"results";
         fs::create_directories(output);
-        std::cout << "Fixed cases: Fig.16 / Fig.19; 50 ns; 100 kHz PWM.\n"
+        std::cout << "Fixed cases: Fig.16 / Fig.19; 1 us; 10 kHz PWM.\n"
                   << "PI settings are reconstructed; 60 Hz is inferred from the paper plot.\n"
                   << "Output: " << output.string() << std::endl;
         if (simulate<0>(paper::fig16, output) != 0) throw std::runtime_error("Fig.16 simulation failed");
