@@ -18,7 +18,7 @@
 #const CABLE_L 1.0e-6
 #const CABLE_R 0.01
 #const INV_CIN 0.001
-#const INV_CFILT 1.0e-6
+#const INV_CFILT 1.0e-4
 #const INV_LFILT 0.0001
 #const INV_RFILT 0.0
 #const LOAD_R 7.0
