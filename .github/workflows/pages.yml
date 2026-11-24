@@ -1,0 +1,223 @@
+name: Deploy all example result pages
+
+on:
+  push:
+    branches:
+      - develop
+    paths:
+      - "examples/rlc_system/**"
+      - "examples/inverter_system/**"
+      - "examples/shipboard_system_two_leg/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      SITE_DIR: site
+      RLC_BUILD: build/rlc-system-build
+      INVERTER_BUILD: build/inverter-system-build
+      SHIPBOARD_BUILD: build/shipboard-system-build
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install plotting dependencies
+        run: python -m pip install numpy matplotlib
+
+      - name: Build and run RLC example
+        run: |
+          cmake -S examples/rlc_system -B "$RLC_BUILD" -DCMAKE_BUILD_TYPE=Release
+          cmake --build "$RLC_BUILD" --parallel
+          "$RLC_BUILD/simulate_rlc"
+          python "$RLC_BUILD/plot.py"
+
+      - name: Build and run inverter example
+        run: |
+          cmake -S examples/inverter_system -B "$INVERTER_BUILD" -DCMAKE_BUILD_TYPE=Release
+          cmake --build "$INVERTER_BUILD" --parallel
+          "$INVERTER_BUILD/simulate_inverter"
+          python "$INVERTER_BUILD/plot.py"
+
+      - name: Build and run shipboard example
+        run: |
+          cmake -S examples/shipboard_system_two_leg -B "$SHIPBOARD_BUILD" -DCMAKE_BUILD_TYPE=Release
+          cmake --build "$SHIPBOARD_BUILD" --parallel
+          "$SHIPBOARD_BUILD/simulate_pi"
+          python "$SHIPBOARD_BUILD/plot_paper.py"
+
+      - name: Assemble combined Pages site
+        run: |
+          rm -rf "$SITE_DIR"
+          mkdir -p "$SITE_DIR/rlc" "$SITE_DIR/inverter" "$SITE_DIR/shipboard"
+          cp -R "$RLC_BUILD/results/." "$SITE_DIR/rlc/"
+          cp -R "$INVERTER_BUILD/results/." "$SITE_DIR/inverter/"
+          cp -R "$SHIPBOARD_BUILD/results/." "$SITE_DIR/shipboard/"
+
+          cat > "$SITE_DIR/index.html" <<'EOF'
+          <!doctype html>
+          <html lang="en">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>ORTiS Solver Example Results</title>
+            <style>
+              body { max-width: 980px; margin: 3rem auto; padding: 0 1rem; color: #20252b; font: 16px/1.6 system-ui, sans-serif; }
+              h1 { margin-bottom: .4rem; }
+              .subtitle { color: #526173; margin-top: 0; }
+              .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1rem; margin-top: 2rem; }
+              .card { display: block; padding: 1.4rem; border: 1px solid #d9e0e7; border-radius: 12px; color: inherit; text-decoration: none; background: #fff; }
+              .card:hover { border-color: #1765cb; box-shadow: 0 8px 24px rgba(23, 101, 203, .12); }
+              .card strong { display: block; margin-bottom: .5rem; color: #1765cb; font-size: 1.1rem; }
+              .note { margin-top: 2rem; padding: 1rem; border-left: 4px solid #84102c; background: #f8f4f5; }
+            </style>
+          </head>
+          <body>
+            <h1>ORTiS Solver Example Results</h1>
+            <p class="subtitle">Independent result pages generated from the repository examples.</p>
+            <div class="cards">
+              <a class="card" href="rlc/"><strong>RLC circuit</strong>Capacitor voltage and inductor current.</a>
+              <a class="card" href="inverter/"><strong>Three-phase inverter</strong>Filtered output and SPWM gate signals.</a>
+              <a class="card" href="shipboard/"><strong>Shipboard system</strong>DC bus reduction, inverter voltage, and PI control.</a>
+            </div>
+            <p class="note">
+              Inverter and shipboard use the accelerated 1 us / 10 kHz variant.
+              Shipboard also uses a retuned 100 uF inverter output filter.
+              The original paper specification used 50 ns, 100 kHz, and a 1 uF inverter output filter.
+            </p>
+          </body>
+          </html>
+          EOF
+
+          cat > "$SITE_DIR/rlc/index.html" <<'EOF'
+          <!doctype html>
+          <html lang="en">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>RLC Simulation Results</title>
+            <style>
+              body { max-width: 960px; margin: 2rem auto; padding: 0 1rem; color: #20252b; font: 16px/1.5 system-ui, sans-serif; }
+              img { display: block; width: 100%; height: auto; }
+              nav { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem; }
+              section { margin: 2rem 0; }
+            </style>
+          </head>
+          <body>
+            <nav><a href="../">All examples</a><a href="../inverter/">Inverter</a><a href="../shipboard/">Shipboard</a></nav>
+            <h1>RLC Simulation Results</h1>
+            <nav>
+              <a href="rlc.csv">Download simulation CSV</a>
+              <a href="validation.json">View validation data</a>
+            </nav>
+            <section><h2>Capacitor voltage</h2><img src="rlc_voltage.png" alt="Capacitor voltage over time"></section>
+            <section><h2>Inductor current</h2><img src="rlc_current.png" alt="Inductor current over time"></section>
+          </body>
+          </html>
+          EOF
+
+          cat > "$SITE_DIR/inverter/index.html" <<'EOF'
+          <!doctype html>
+          <html lang="en">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>Three-phase Inverter Results</title>
+            <style>
+              body { max-width: 960px; margin: 2rem auto; padding: 0 1rem; color: #20252b; font: 16px/1.5 system-ui, sans-serif; }
+              img { display: block; width: 100%; height: auto; }
+              nav { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem; }
+              section { margin: 2rem 0; }
+            </style>
+          </head>
+          <body>
+            <nav><a href="../">All examples</a><a href="../rlc/">RLC</a><a href="../shipboard/">Shipboard</a></nav>
+            <h1>Three-phase Inverter Simulation Results</h1>
+            <p>Accelerated variant: 1 us time step and 10 kHz triangular carrier, with a 100 uF output filter.</p>
+            <nav>
+              <a href="inverter.csv">Download inverter CSV</a>
+              <a href="spwm.csv">Download SPWM CSV</a>
+              <a href="validation.json">View validation data</a>
+            </nav>
+            <section><h2>Filtered three-phase output voltages</h2><img src="inverter_voltage.png" alt="Filtered three-phase output voltages"></section>
+            <section><h2>SPWM reference, carrier, and gate signals</h2><img src="inverter_spwm.png" alt="SPWM reference, carrier, and gate signals"></section>
+          </body>
+          </html>
+          EOF
+
+          cat > "$SITE_DIR/shipboard/index.html" <<'EOF'
+          <!doctype html>
+          <html lang="en">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>Two-leg Shipboard Simulation Results</title>
+            <style>
+              body { max-width: 1040px; margin: 2rem auto; padding: 0 1rem; color: #20252b; font: 16px/1.5 system-ui, sans-serif; }
+              img { display: block; width: 100%; height: auto; margin-bottom: 2rem; }
+              nav { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem; }
+              section { margin: 3rem 0; }
+              .note { padding: 1rem; border-left: 4px solid #84102c; background: #f8f4f5; }
+            </style>
+          </head>
+          <body>
+            <nav><a href="../">All examples</a><a href="../rlc/">RLC</a><a href="../inverter/">Inverter</a></nav>
+            <h1>Two-leg Shipboard Simulation Results</h1>
+            <p class="note">
+              Accelerated variant: 1 us time step, 10 kHz PWM, and a 100 uF
+              inverter output filter. DCDC_CFILT remains 100 uF.
+              The original paper specification used 50 ns, 100 kHz, and a 1 uF
+              inverter output filter.
+            </p>
+            <nav>
+              <a href="fig16.csv">Download Fig.16 CSV</a>
+              <a href="fig19.csv">Download Fig.19 CSV</a>
+              <a href="fig19_control.csv">Download PI control CSV</a>
+              <a href="validation.json">View validation data</a>
+            </nav>
+            <section><h2>Fig.16 - DC bus voltage reduction</h2><img src="fig16_dc_bus.png" alt="DC bus voltage reduction at 0.5 seconds"></section>
+            <section><h2>Fig.19 - PI voltage reduction</h2><img src="fig19_pi_voltage.png" alt="Inverter PI voltage-amplitude reduction at 10.133 seconds"></section>
+          </body>
+          </html>
+          EOF
+
+      - name: Upload combined Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Upload combined site for inspection
+        uses: actions/upload-artifact@v4
+        with:
+          name: all-example-site
+          path: site/
+          if-no-files-found: error
+
+  deploy:
+    if: github.ref == 'refs/heads/develop'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy combined site to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

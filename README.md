@@ -56,6 +56,19 @@ See [examples/README.md](examples/README.md) for the RLC, three-phase inverter,
 and two-leg shipboard examples. Each executable generates CSV without arguments;
 its separate Python script draws the results without arguments.
 
+## Published example results
+
+The combined GitHub Pages site publishes each example in a stable subdirectory:
+
+- `/rlc/`
+- `/inverter/`
+- `/shipboard/`
+
+Run the `Deploy all example result pages` workflow to rebuild and publish all
+three pages together. The RLC, inverter, and shipboard build workflows produce
+downloadable simulation artifacts, but they do not deploy Pages independently.
+This prevents one example from overwriting the other result pages.
+
 ## License
 
 Solver C++ Code Generation Tools are licensed under the GNU General Public License (GPL) v3.0 (https://www.gnu.org/licenses/).
